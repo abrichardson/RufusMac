@@ -32,7 +32,7 @@ enum Shell {
     }
 
     @discardableResult
-    static func run(_ launchPath: String, _ arguments: [String]) async throws -> ShellResult {
+    static func run(_ launchPath: String, _ arguments: [String], onOutput: (@Sendable (String) -> Void)? = nil) async throws -> ShellResult {
         try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let process = Process()
@@ -57,10 +57,21 @@ enum Shell {
                 final class Buffer: @unchecked Sendable { var data = Data() }
                 let errors = Buffer()
                 DispatchQueue.global().async {
-                    errors.data = errPipe.fileHandleForReading.readDataToEndOfFile()
+                    while true {
+                        let chunk = errPipe.fileHandleForReading.availableData
+                        if chunk.isEmpty { break }
+                        errors.data.append(chunk)
+                        onOutput?(String(decoding: chunk, as: UTF8.self))
+                    }
                     errorRead.leave()
                 }
-                let outData = outPipe.fileHandleForReading.readDataToEndOfFile()
+                var outData = Data()
+                while true {
+                    let chunk = outPipe.fileHandleForReading.availableData
+                    if chunk.isEmpty { break }
+                    outData.append(chunk)
+                    onOutput?(String(decoding: chunk, as: UTF8.self))
+                }
                 errorRead.wait()
                 let errData = errors.data
                 process.waitUntilExit()
@@ -75,8 +86,8 @@ enum Shell {
     }
 
     /// Run, requiring success; returns stdout or throws `ShellError.nonZeroExit`.
-    static func output(_ launchPath: String, _ arguments: [String]) async throws -> String {
-        let result = try await run(launchPath, arguments)
+    static func output(_ launchPath: String, _ arguments: [String], onOutput: (@Sendable (String) -> Void)? = nil) async throws -> String {
+        let result = try await run(launchPath, arguments, onOutput: onOutput)
         guard result.ok else {
             throw ShellError.nonZeroExit(
                 command: ([launchPath] + arguments).joined(separator: " "),

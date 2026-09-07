@@ -70,9 +70,26 @@ struct FormatOptionsView: View {
             }
 
             if model.isWindowsSingle {
-                Toggle("Bypass Windows 11 checks (experimental; compatibility varies)",
+                Toggle("Bypass TPM, Secure Boot, and RAM checks (experimental)",
                        isOn: $model.config.windows11Bypass)
                 .tint(Brand.accent)
+                Divider()
+                Text("Windows account setup").font(.subheadline.bold())
+                Toggle("Create a local administrator account", isOn: $model.config.windowsSetup.createLocalAccount)
+                if model.config.windowsSetup.createLocalAccount {
+                    TextField("Windows username", text: $model.config.windowsSetup.username)
+                        .textFieldStyle(.roundedBorder)
+                    if let error = model.config.windowsSetup.validationError {
+                        Text(error).font(.caption).foregroundStyle(.red)
+                    }
+                    Text("Creates the account with a blank password, then requests a password change at the next sign-in. No password is stored on the USB.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Toggle("Allow setup without a Microsoft account", isOn: $model.config.windowsSetup.skipMicrosoftAccount)
+                Text("The bypass alone may require disconnecting the PC from the internet. Windows S mode is not supported.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Toggle("Skip privacy questions (decline optional data sharing)", isOn: $model.config.windowsSetup.skipPrivacyQuestions)
+
             }
             if model.mode == .multiboot {
                 Stepper(

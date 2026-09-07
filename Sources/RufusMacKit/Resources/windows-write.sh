@@ -4,6 +4,7 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 WORK=$(mktemp -d /private/tmp/rufusmac.XXXXXXXX)
 OWN_MOUNT=0
+printf '%s\n' 'RM_STAGE|Checking the ISO and USB'
 cleanup() {
     if [ "$OWN_MOUNT" = 1 ]; then "$HDIUTIL" detach "$WORK/iso" >/dev/null 2>&1 || true; fi
     # Never recursively delete a mountpoint, even if detaching failed.
@@ -65,7 +66,7 @@ get_info() { /usr/bin/plutil -extract "$1" raw -o - "$WORK/info.plist"; }
 [ "$(get_info MediaName)" = "$EXPECTED_NAME" ] || fail 'USB changed identity. Select it again.'
 [ "$(get_info DeviceNode)" = "$DISK" ] || fail 'USB identifier changed.'
 [ "$(get_info Writable)" = true ] || fail 'USB is read-only.'
-printf '%s\n' 'Formatting USB…'
+printf '%s\n' 'RM_STAGE|Formatting the USB — administrator approval may be needed'
 # Keep ISO access, mounting, wimlib, and copying in the user's process.
 # Elevate only the system formatting command. Injected fixture tools run directly.
 if [ "$DISKUTIL" = /usr/sbin/diskutil ]; then
@@ -99,16 +100,17 @@ SLICE="${DISK}s1"
 [ "$SCHEME" != GPT ] || SLICE="${DISK}s2"
 VOL=$("$DISKUTIL" info -plist "$SLICE" | /usr/bin/plutil -extract MountPoint raw -o - -)
 [ -n "$VOL" ] && [ -d "$VOL" ] || fail 'The new USB volume is not mounted.'
-printf '%s\n' 'Copying Windows setup files…'
+printf '%s\n' 'RM_STAGE|Copying Windows setup files'
 # Avoid Unix ownership/permission preservation on FAT32.
 if [ "$SPLIT" = 1 ]; then
-    "$RSYNC" -r --exclude=/sources/install.wim "$ISO_MOUNT/" "$VOL/"
+    "$RSYNC" -r --progress --exclude=/sources/install.wim "$ISO_MOUNT/" "$VOL/"
+    printf '%s\n' 'RM_STAGE|Splitting the large Windows image'
     "$WIMLIB" split "$ISO_MOUNT/sources/install.wim" "$VOL/sources/install.swm" 3800 --check
 else
-    "$RSYNC" -r "$ISO_MOUNT/" "$VOL/"
+    "$RSYNC" -r --progress "$ISO_MOUNT/" "$VOL/"
 fi
 if [ "$VERIFY" = 1 ]; then
-    printf '%s\n' 'Verifying copied files…'
+    printf '%s\n' 'RM_STAGE|Verifying copied files'
     /usr/bin/find "$ISO_MOUNT" -type f -print0 | while IFS= read -r -d '' source_file; do
         relative=${source_file#"$ISO_MOUNT/"}
         if [ "$SPLIT" = 1 ] && [ "$relative" = sources/install.wim ]; then continue; fi

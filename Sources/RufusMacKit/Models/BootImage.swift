@@ -32,12 +32,14 @@ public struct BootImage: Identifiable, Sendable, Hashable {
     /// True when `sources/install.wim` exceeds the FAT32 4 GB file limit and
     /// therefore must be split into `.swm` files for a UEFI FAT32 target.
     public let hasOversizedWIM: Bool
+    public let windowsArchitecture: String?
 
-    public init(url: URL, sizeBytes: Int64, kind: ImageKind, hasOversizedWIM: Bool) {
+    public init(url: URL, sizeBytes: Int64, kind: ImageKind, hasOversizedWIM: Bool, windowsArchitecture: String? = nil) {
         self.url = url
         self.sizeBytes = sizeBytes
         self.kind = kind
         self.hasOversizedWIM = hasOversizedWIM
+        self.windowsArchitecture = windowsArchitecture
     }
 
     public var id: URL { url }

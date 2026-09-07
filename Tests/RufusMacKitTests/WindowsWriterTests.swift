@@ -74,10 +74,12 @@ struct WindowsWriterTests {
             try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: path.path)
             return path.path
         }
-        func run(scheme: PartitionScheme = .gpt) async throws -> ShellResult {
-            let image = BootImage(url: iso, sizeBytes: 1024, kind: .windows, hasOversizedWIM: false)
+        func run(scheme: PartitionScheme = .gpt, setup: WindowsSetupOptions = .init()) async throws -> ShellResult {
+            let image = BootImage(url: iso, sizeBytes: 1024, kind: .windows, hasOversizedWIM: false, windowsArchitecture: "amd64")
+            var config = WriteConfig(partitionScheme: scheme)
+            config.windowsSetup = setup
             let plan = BurnPlanner(tools: tools).makePlan(mode: .single, image: image, drive: drive,
-                config: WriteConfig(partitionScheme: scheme))
+                config: config)
             return try await Shell.run("/bin/bash", ["-c", plan.script])
         }
         var calls: String { (try? String(contentsOf: root.appendingPathComponent("calls"), encoding: .utf8)) ?? "" }

@@ -1,13 +1,8 @@
 import Foundation
 
-/// Executes a privileged shell script (partitioning, formatting, `dd`, …) with a
-/// single administrator-password prompt via macOS Authorization Services
-/// (`osascript … with administrator privileges`).
-///
-/// The whole burn pipeline is assembled as one script and run once, so the user
-/// is prompted a single time per operation. Set `dryRun` to capture the exact
-/// script **without executing** — used by tests and the in-app "Preview
-/// commands" feature so destructive actions are always auditable first.
+/// Executes auditable write scripts. Windows scripts run as the current user
+/// and elevate only formatting; raw/reclaim scripts use an administrator
+/// process. Normal-user stdout/stderr is streamed for live progress.
 public actor PrivilegedRunner {
     public var dryRun: Bool
     public private(set) var lastScript: String = ""
@@ -20,10 +15,9 @@ public actor PrivilegedRunner {
         dryRun = value
     }
 
-    /// Run `script` as administrator. The user sees one native password dialog
-    /// labelled with `prompt`. In dry-run mode the script is returned verbatim.
+    /// Run with the requested privilege mode, or return a dry-run preview.
     @discardableResult
-    public func run(script: String, prompt: String, requiresAdministrator: Bool = true) async throws -> String {
+    public func run(script: String, prompt: String, requiresAdministrator: Bool = true, onOutput: (@Sendable (String) -> Void)? = nil) async throws -> String {
         lastScript = script
 
         if dryRun {
@@ -44,12 +38,12 @@ public actor PrivilegedRunner {
         }
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: scriptURL.path)
         if !requiresAdministrator {
-            return try await Shell.output("/bin/bash", [scriptURL.path])
+            return try await Shell.output("/bin/bash", [scriptURL.path], onOutput: onOutput)
         }
         let command = "/bin/bash " + Shell.quote(scriptURL.path)
         let appleScript = "do shell script \"\(appleQuote(command))\" with prompt \"\(appleQuote(prompt))\" with administrator privileges"
 
-        let result = try await Shell.run("/usr/bin/osascript", ["-e", appleScript])
+        let result = try await Shell.run("/usr/bin/osascript", ["-e", appleScript], onOutput: onOutput)
         guard result.ok else {
             throw ShellError.nonZeroExit(command: "osascript (admin)", status: result.status, stderr: result.stderr)
         }

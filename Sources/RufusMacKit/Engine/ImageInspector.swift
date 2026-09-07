@@ -17,12 +17,13 @@ public struct ImageInspector: Sendable {
 
         if let existing = try? await existingMount(url) {
             let (kind, oversized) = classify(mountPoint: existing)
-            return BootImage(url: url, sizeBytes: size, kind: kind, hasOversizedWIM: oversized)
+            return BootImage(url: url, sizeBytes: size, kind: kind, hasOversizedWIM: oversized, windowsArchitecture: architecture(at: existing))
         }
         if let mount = try? await mountReadOnly(url) {
             let (kind, oversized) = classify(mountPoint: mount)
+            let arch = architecture(at: mount)
             try? await detach(mount)
-            return BootImage(url: url, sizeBytes: size, kind: kind, hasOversizedWIM: oversized)
+            return BootImage(url: url, sizeBytes: size, kind: kind, hasOversizedWIM: oversized, windowsArchitecture: arch)
         }
 
         // Never guess Linux after a mount failure: this may be a Windows ISO.
@@ -54,6 +55,13 @@ public struct ImageInspector: Sendable {
         let linuxMarkers = ["casper", "isolinux", "boot/grub", "live", "EFI/BOOT", "arch", "LiveOS"]
         let isLinux = linuxMarkers.contains { fm.fileExists(atPath: "\(mountPoint)/\($0)") }
         return (isLinux ? .linux : .unknown, false)
+    }
+
+    private func architecture(at mount: String) -> String? {
+        let fm = FileManager.default
+        if fm.fileExists(atPath: "\(mount)/efi/boot/bootx64.efi") { return "amd64" }
+        if fm.fileExists(atPath: "\(mount)/efi/boot/bootaa64.efi") { return "arm64" }
+        return nil
     }
 
     private func existingMount(_ url: URL) async throws -> String? {

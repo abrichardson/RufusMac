@@ -32,6 +32,7 @@ public enum BootFileSystem: String, CaseIterable, Sendable, Identifiable, Codabl
 /// Everything the user can configure for a burn — the RufusMac equivalent of
 /// Rufus's main options panel.
 public struct WriteConfig: Sendable {
+    public var windowsSetup = WindowsSetupOptions()
     public var volumeLabel: String
     public var partitionScheme: PartitionScheme
     public var targetSystem: TargetSystem

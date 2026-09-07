@@ -14,6 +14,12 @@ A fork of [h4rithd/RufusMac](https://github.com/h4rithd/RufusMac), focused on cr
 - Paths containing spaces, quotes, and shell metacharacters are handled as data.
 - Standard Windows installation by default. Experimental Windows 11 bypass is opt-in and may not work on all releases.
 
+## Windows account options and progress
+
+The Windows options panel can create a named local administrator, allow setup without a Microsoft account, and decline Express setup settings. These controls are off by default and independent of the hardware bypass. Local accounts start with a blank password and request a password change at the next sign-in, matching Rufus's approach. No password is collected by the Mac app. Validate this behavior in Windows Setup before deploying customized media.
+
+Windows writes display the current stage, live tool output, and elapsed time. See [the official Rufus comparison](docs/RUFUS-COMPARISON.md) for the implementation rationale, remaining features, and test limits.
+
 ## Build
 
 ```sh

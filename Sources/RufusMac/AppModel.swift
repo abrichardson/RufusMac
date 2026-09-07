@@ -16,6 +16,11 @@ final class AppModel {
     var isRefreshing = false
     var isInspecting = false
     var isRunning = false
+    var runningStage = "Preparing"
+    var runningDetail = ""
+    var runStartedAt = Date()
+    private var outputFragment = ""
+
 
     var showConfirm = false
     var acknowledgedErase = false
@@ -38,6 +43,7 @@ final class AppModel {
 
     var canStart: Bool {
         guard !isRunning, !isInspecting, mode != .multiboot, selectedDrive != nil else { return false }
+        if isWindowsSingle && config.windowsSetup.validationError != nil { return false }
         if requiresImage && image == nil { return false }
         return true
     }
@@ -101,6 +107,10 @@ final class AppModel {
         guard let plan = pendingPlan else { return }
         showConfirm = false
         isRunning = true
+        runningStage = "Preparing"
+        runningDetail = ""
+        outputFragment = ""
+        runStartedAt = Date()
         defer { isRunning = false }
 
         log = ["# \(plan.summary)"]
@@ -109,7 +119,10 @@ final class AppModel {
             let output = try await runner.run(
                 script: plan.script,
                 prompt: "RufusMac needs administrator access to \(plan.mode.rawValue.lowercased()) on \(plan.summary)",
-                requiresAdministrator: plan.mode != .single
+                requiresAdministrator: plan.mode != .single,
+                onOutput: { [weak self] text in
+                    Task { @MainActor in self?.receiveOutput(text) }
+                }
             )
             log.append(output)
             resultIsError = false
@@ -121,6 +134,23 @@ final class AppModel {
             resultIsError = true
             resultMessage = "Failed: \(error.localizedDescription)"
             log.append("ERROR: \(error.localizedDescription)")
+        }
+    }
+
+    private func receiveOutput(_ text: String) {
+        outputFragment += text.replacingOccurrences(of: "\r", with: "\n")
+        let lines = outputFragment.components(separatedBy: "\n")
+        outputFragment = String((lines.last ?? "").suffix(4096))
+        for line in lines.dropLast() where !line.isEmpty {
+            if line.hasPrefix("RM_STAGE|") {
+                runningStage = String(line.dropFirst(9))
+                runningDetail = ""
+            } else if line.hasPrefix("==>") {
+                runningStage = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                runningDetail = ""
+            } else {
+                runningDetail = String(line.prefix(220))
+            }
         }
     }
 

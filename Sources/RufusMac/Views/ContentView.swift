@@ -49,7 +49,7 @@ struct ContentView: View {
             .padding(20)
 
             if model.isRunning {
-                RunningOverlay()
+                RunningOverlay(stage: model.runningStage, detail: model.runningDetail, startedAt: model.runStartedAt)
             }
         }
         .animation(.smooth(duration: 0.3), value: model.mode)

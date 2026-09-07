@@ -122,6 +122,13 @@ public struct BurnPlanner: Sendable {
               config.quickFormat, config.persistenceMB == 0 else {
             return blockedPlan(mode: .single, reason: "Windows writing supports FAT32 and UEFI with quick format only.")
         }
+        let setupXML: String?
+        let fullXML: String?
+        do {
+            setupXML = try config.windowsSetup.answerFile(architecture: image.windowsArchitecture ?? "")
+            fullXML = try config.windowsSetup.answerFile(architecture: image.windowsArchitecture ?? "", bypassHardware: config.windows11Bypass)
+        }
+        catch { return blockedPlan(mode: .single, reason: error.localizedDescription) }
         let label = config.sanitizedLabel.isEmpty ? "WIN_USB" : config.sanitizedLabel
         let resource = Bundle.module.url(forResource: "windows-write", withExtension: "sh")!
         guard let script = try? String(contentsOf: resource, encoding: .utf8) else {
@@ -136,13 +143,30 @@ public struct BurnPlanner: Sendable {
             "VERIFY": config.verifyAfterWrite ? "1" : "0"
         ].sorted { $0.key < $1.key }.map { "\($0.key)=\(q($0.value))" }.joined(separator: "\n")
         var steps = [BurnStep("Prepare and write Windows installer", assignments + "\n" + script)]
-        if config.windows11Bypass {
+        if let setupXML {
+            // With no windowsPE pass, Rufus places the file in the OEM tree;
+            // Windows Setup copies it into Windows/Panther for later passes.
+            steps.append(BurnStep("Configure Windows account and setup", """
+                printf '%s\\n' 'RM_STAGE|Configuring Windows setup'
+                OEM_DIR="$VOL/"'sources/$OEM$/$$/Panther'
+                mkdir -p "$OEM_DIR"
+                cat > "$OEM_DIR/unattend.xml" <<'RM_SETUP_XML'
+                \(setupXML)
+                RM_SETUP_XML
+                """))
+        }
+        if config.windows11Bypass, let fullXML {
             steps.append(BurnStep("Inject optional Windows 11 bypass",
-                "cat > \"$VOL/autounattend.xml\" <<'RMEOF'\n\(autounattendBypassXML)\nRMEOF"))
+                "cat > \"$VOL/autounattend.xml\" <<'RMEOF'\n\(fullXML)\nRMEOF"))
         }
         steps.append(BurnStep("Flush and eject USB", "sync\n\(q(tools.diskutil)) eject \(q(drive.deviceNode))"))
+        var setupSummary = ""
+        if config.windowsSetup.createLocalAccount { setupSummary += " Local administrator: \(config.windowsSetup.username); password requested at next sign-in." }
+        if config.windowsSetup.skipMicrosoftAccount { setupSummary += " Microsoft-account bypass enabled." }
+        if config.windowsSetup.skipPrivacyQuestions { setupSummary += " Optional data-sharing questions declined." }
+        if config.windows11Bypass { setupSummary += " Experimental hardware bypass enabled." }
         return BurnPlan(mode: .single,
-            summary: "Create a Windows UEFI installer on \(drive.title) from \(image.name) (\(config.partitionScheme.rawValue), FAT32).",
+            summary: "Create a Windows UEFI installer on \(drive.title) from \(image.name) (\(config.partitionScheme.rawValue), FAT32)." + setupSummary,
             warnings: ["ALL DATA on \(drive.title) (\(drive.id)) will be ERASED."],
             steps: steps, experimental: false)
     }
@@ -197,25 +221,4 @@ public struct BurnPlanner: Sendable {
         )
     }
 
-    // MARK: - Windows 11 bypass unattend
-
-    private var autounattendBypassXML: String {
-        """
-        <?xml version="1.0" encoding="utf-8"?>
-        <unattend xmlns="urn:schemas-microsoft-com:unattend">
-          <settings pass="windowsPE">
-            <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" language="neutral" versionScope="nonSxS" publicKeyToken="31bf3856ad364e35" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
-              <RunSynchronous>
-                <RunSynchronousCommand wcm:action="add"><Order>1</Order><Path>reg add HKLM\\SYSTEM\\Setup\\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path></RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add"><Order>2</Order><Path>reg add HKLM\\SYSTEM\\Setup\\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path></RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add"><Order>3</Order><Path>reg add HKLM\\SYSTEM\\Setup\\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path></RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add"><Order>4</Order><Path>reg add HKLM\\SYSTEM\\Setup\\LabConfig /v BypassCPUCheck /t REG_DWORD /d 1 /f</Path></RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add"><Order>5</Order><Path>reg add HKLM\\SYSTEM\\Setup\\LabConfig /v BypassStorageCheck /t REG_DWORD /d 1 /f</Path></RunSynchronousCommand>
-                <RunSynchronousCommand wcm:action="add"><Order>6</Order><Path>reg add HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE /v BypassNRO /t REG_DWORD /d 1 /f</Path></RunSynchronousCommand>
-              </RunSynchronous>
-            </component>
-          </settings>
-        </unattend>
-        """
-    }
 }
