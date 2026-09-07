@@ -23,11 +23,11 @@ public actor PrivilegedRunner {
     /// Run `script` as administrator. The user sees one native password dialog
     /// labelled with `prompt`. In dry-run mode the script is returned verbatim.
     @discardableResult
-    public func run(script: String, prompt: String) async throws -> String {
+    public func run(script: String, prompt: String, requiresAdministrator: Bool = true) async throws -> String {
         lastScript = script
 
         if dryRun {
-            return "[dry-run] would execute as administrator:\n\(script)"
+            return "[dry-run] execution skipped:\n\(script)"
         }
 
         // Write the script to a temp file and execute it as admin in one prompt.
@@ -43,6 +43,9 @@ public actor PrivilegedRunner {
                 .replacingOccurrences(of: "\"", with: "\\\"")
         }
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: scriptURL.path)
+        if !requiresAdministrator {
+            return try await Shell.output("/bin/bash", [scriptURL.path])
+        }
         let command = "/bin/bash " + Shell.quote(scriptURL.path)
         let appleScript = "do shell script \"\(appleQuote(command))\" with prompt \"\(appleQuote(prompt))\" with administrator privileges"
 

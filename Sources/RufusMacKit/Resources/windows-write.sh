@@ -66,7 +66,34 @@ get_info() { /usr/bin/plutil -extract "$1" raw -o - "$WORK/info.plist"; }
 [ "$(get_info DeviceNode)" = "$DISK" ] || fail 'USB identifier changed.'
 [ "$(get_info Writable)" = true ] || fail 'USB is read-only.'
 printf '%s\n' 'Formatting USB…'
-"$DISKUTIL" eraseDisk 'MS-DOS FAT32' "$LABEL" "$SCHEME" "$DISK"
+# Keep ISO access, mounting, wimlib, and copying in the user's process.
+# Elevate only the system formatting command. Injected fixture tools run directly.
+if [ "$DISKUTIL" = /usr/sbin/diskutil ]; then
+    format_script=$(cat <<'ROOTSCRIPT'
+set -euo pipefail
+info=$(/usr/sbin/diskutil info -plist "$3")
+field() { printf '%s' "$info" | /usr/bin/plutil -extract "$1" raw -o - -; }
+[ "$(field Internal)" = false ] && [ "$(field WholeDisk)" = true ] &&
+[ "$(field VirtualOrPhysical)" = Physical ] && [ "$(field BusProtocol)" = USB ] &&
+[ "$(field TotalSize)" = "$4" ] && [ "$(field MediaName)" = "$5" ] &&
+[ "$(field DeviceNode)" = "$3" ] && [ "$(field Writable)" = true ] || {
+    printf '%s\n' 'USB changed while authorizing. Select it again.' >&2; exit 1;
+}
+/usr/sbin/diskutil eraseDisk 'MS-DOS FAT32' "$1" "$2" "$3"
+ROOTSCRIPT
+)
+    /usr/bin/osascript - "$format_script" "$LABEL" "$SCHEME" "$DISK" "$EXPECTED_SIZE" "$EXPECTED_NAME" <<'APPLESCRIPT'
+on run argv
+    set formatCommand to "/bin/bash -c " & quoted form of (item 1 of argv) & " --"
+    repeat with i from 2 to count of argv
+        set formatCommand to formatCommand & " " & quoted form of (item i of argv)
+    end repeat
+    do shell script formatCommand with prompt "RufusMac needs to format the selected USB drive." with administrator privileges
+end run
+APPLESCRIPT
+else
+    "$DISKUTIL" eraseDisk 'MS-DOS FAT32' "$LABEL" "$SCHEME" "$DISK"
+fi
 # GPT creates an EFI partition at s1; the data partition is s2.
 SLICE="${DISK}s1"
 [ "$SCHEME" != GPT ] || SLICE="${DISK}s2"

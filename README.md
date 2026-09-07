@@ -8,6 +8,7 @@ A fork of [h4rithd/RufusMac](https://github.com/h4rithd/RufusMac), focused on cr
 - Large `sources/install.wim` split into `.swm` parts using bundled wimlib.
 - Small `install.esd` and existing split `.swm` payloads copied normally.
 - Already-mounted ISO detection; mounting errors no longer silently select the Linux writer.
+- ISO access and copying run as the logged-in user; only formatting requests administrator privileges.
 - Preflight before erase: source layout, FAT32 file limits, required tools, capacity, and fresh physical USB identity checks.
 - Verification compares copied files byte-for-byte and checks split WIM integrity.
 - Paths containing spaces, quotes, and shell metacharacters are handled as data.

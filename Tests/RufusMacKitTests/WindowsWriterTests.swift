@@ -145,6 +145,13 @@ struct WindowsWriterTests {
         #expect(FileManager.default.fileExists(atPath: f.destination.appendingPathComponent("sources/install.swm").path))
     }
 
+    @Test func windowsRunnerKeepsUserIdentity() async throws {
+        let runner = PrivilegedRunner()
+        let output = try await runner.run(script: "/usr/bin/id -u", prompt: "Unused",
+                                          requiresAdministrator: false)
+        #expect(output.trimmingCharacters(in: .whitespacesAndNewlines) == String(getuid()))
+    }
+
     @Test func shellDrainsLargeStderr() async throws {
         let result = try await Shell.run("/bin/bash", ["-c", "for ((i=0;i<10000;i++)); do printf 'some error output\\n' >&2; done; printf done"])
         #expect(result.ok)
