@@ -39,6 +39,12 @@ struct BootSelectionView: View {
                 }
             }
         }
+        .onDrop(of: [UTType.fileURL.identifier], isTargeted: $isTargeted, perform: acceptDrop)
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(isTargeted ? Brand.accent : .clear, lineWidth: 2)
+                .allowsHitTesting(false)
+        }
         .sheet(isPresented: $showCatalog) {
             CatalogView { showCatalog = false }
         }
@@ -79,12 +85,39 @@ struct BootSelectionView: View {
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
                 .foregroundStyle(isTargeted ? Brand.accent : .secondary.opacity(0.4))
+                .allowsHitTesting(false)
         )
-        .dropDestination(for: URL.self) { urls, _ in
-            guard let url = urls.first else { return false }
-            Task { await model.selectImage(url) }
-            return true
-        } isTargeted: { isTargeted = $0 }
+    }
+
+    /// Finder provides public.file-url data. Load that representation directly
+    /// instead of relying on URL Transferable's generic URL conversion.
+    /// The handler lives on the whole card so a drop can replace an image too.
+    private func acceptDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard !model.isRunning, !model.isInspecting, !model.showConfirm,
+              let provider = providers.first(where: {
+                  $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+              }) else { return false }
+        provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, error in
+            let url: URL?
+            if let data = item as? Data {
+                url = URL(dataRepresentation: data, relativeTo: nil)
+            } else if let value = item as? URL {
+                url = value
+            } else if let value = item as? String {
+                url = URL(string: value)
+            } else {
+                url = nil
+            }
+            Task { @MainActor in
+                guard error == nil, let url, url.isFileURL else {
+                    model.resultIsError = true
+                    model.resultMessage = "Couldn't read the dropped file. Drag an ISO, IMG, or DMG from Finder."
+                    return
+                }
+                await model.selectImage(url)
+            }
+        }
+        return true
     }
 
     private func selectedRow(_ image: BootImage) -> some View {

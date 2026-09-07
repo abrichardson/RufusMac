@@ -67,6 +67,7 @@ final class AppModel {
     }
 
     func selectImage(_ url: URL) async {
+        guard !isRunning, !isInspecting, !showConfirm else { return }
         guard ["iso", "img", "dmg"].contains(url.pathExtension.lowercased()) else {
             resultIsError = true
             resultMessage = "Select an ISO, IMG, or DMG disk image."
