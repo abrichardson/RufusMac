@@ -116,6 +116,11 @@ do {
     case "preview":
         try await previewPlan(modeArg: arguments.dropFirst().first ?? "reclaim",
                               isoPath: arguments.dropFirst(2).first)
+    case "inspect":
+        guard arguments.count == 2 else { print("Usage: rmctl inspect <iso>"); exit(1) }
+        let image = await ImageInspector().inspect(URL(fileURLWithPath: arguments[1]))
+        print("Kind: \(image.kind.rawValue)\nSize: \(image.sizeBytes)\nRequires WIM split: \(image.hasOversizedWIM)")
+        if image.kind == .unknown { exit(1) }
     case "catalog":
         showCatalog()
     case "verify":

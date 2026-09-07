@@ -44,7 +44,7 @@ struct FormatOptionsView: View {
             HStack {
                 Text("Target").frame(alignment: .leading)
                 Picker("", selection: $model.config.targetSystem) {
-                    ForEach(TargetSystem.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(model.isWindowsSingle ? [TargetSystem.uefi] : TargetSystem.allCases) { Text($0.rawValue).tag($0) }
                 }
                 .labelsHidden()
             }
@@ -55,7 +55,7 @@ struct FormatOptionsView: View {
         HStack {
             Text("File system").frame(width: 130, alignment: .leading)
             Picker("", selection: $model.config.fileSystem) {
-                ForEach(BootFileSystem.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(model.isWindowsSingle ? [BootFileSystem.fat32] : [.fat32, .exfat]) { Text($0.rawValue).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -66,13 +66,11 @@ struct FormatOptionsView: View {
     private var togglesRow: some View {
         VStack(alignment: .leading, spacing: 8) {
             if model.requiresImage {
-                Toggle("Verify after write (SHA-256)", isOn: $model.config.verifyAfterWrite)
+                Toggle("Verify after write", isOn: $model.config.verifyAfterWrite)
             }
-            if model.showsFormatOptions {
-                Toggle("Quick format", isOn: $model.config.quickFormat)
-            }
+
             if model.isWindowsSingle {
-                Toggle("Bypass Windows 11 checks (TPM · Secure Boot · RAM · online account)",
+                Toggle("Bypass Windows 11 checks (experimental; compatibility varies)",
                        isOn: $model.config.windows11Bypass)
                 .tint(Brand.accent)
             }

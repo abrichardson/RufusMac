@@ -38,9 +38,13 @@ public actor PrivilegedRunner {
         try fullScript.write(to: scriptURL, atomically: true, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: scriptURL) }
 
-        let safePrompt = prompt.replacingOccurrences(of: "\"", with: "'")
-        let command = "/bin/sh '\(scriptURL.path)'"
-        let appleScript = "do shell script \"\(command)\" with prompt \"\(safePrompt)\" with administrator privileges"
+        func appleQuote(_ value: String) -> String {
+            value.replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+        }
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: scriptURL.path)
+        let command = "/bin/bash " + Shell.quote(scriptURL.path)
+        let appleScript = "do shell script \"\(appleQuote(command))\" with prompt \"\(appleQuote(prompt))\" with administrator privileges"
 
         let result = try await Shell.run("/usr/bin/osascript", ["-e", appleScript])
         guard result.ok else {

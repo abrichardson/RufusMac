@@ -50,7 +50,7 @@ public struct WriteConfig: Sendable {
         fileSystem: BootFileSystem = .fat32,
         quickFormat: Bool = true,
         verifyAfterWrite: Bool = true,
-        windows11Bypass: Bool = true,
+        windows11Bypass: Bool = false,
         persistenceMB: Int = 0
     ) {
         self.volumeLabel = volumeLabel
@@ -82,7 +82,7 @@ public struct WriteConfig: Sendable {
                 fileSystem: .fat32,
                 quickFormat: true,
                 verifyAfterWrite: true,
-                windows11Bypass: true,
+                windows11Bypass: false,
                 persistenceMB: 0
             )
         case .linux, .raw, .unknown:

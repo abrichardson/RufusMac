@@ -33,7 +33,7 @@ public struct BurnPlan: Sendable {
 
     public var script: String {
         steps
-            .map { "echo \"==> \($0.title)\"\n\($0.command)" }
+            .map { "printf '%s\\n' " + Shell.quote("==> " + $0.title) + "\n" + $0.command }
             .joined(separator: "\n\n")
     }
 }
@@ -53,6 +53,24 @@ public struct BurnPlanner: Sendable {
     }
 
     public func makePlan(mode: BurnMode, image: BootImage?, drive: USBDrive, config: WriteConfig) -> BurnPlan {
+        guard drive.isSafeTarget else {
+            return blockedPlan(mode: mode, reason: "Select an external USB whole disk.")
+        }
+        if let image, drive.mountPoints.contains(where: { image.url.path.hasPrefix($0 + "/") }) {
+            return blockedPlan(mode: mode, reason: "Move the ISO off the destination USB before writing.")
+        }
+        if let image, (image.sizeBytes <= 0 || image.sizeBytes + 268_435_456 > drive.sizeBytes) {
+            return blockedPlan(mode: mode, reason: "The image is empty or the USB is too small (256 MB spare space required).")
+        }
+        if mode == .multiboot {
+            return blockedPlan(mode: mode, reason: "Multiboot is unavailable: this project does not include a working macOS Ventoy installer.")
+        }
+        if mode == .dd && image?.kind == .windows {
+            return blockedPlan(mode: mode, reason: "Use Single ISO for Windows installers.")
+        }
+        if mode == .single && image?.kind == .unknown {
+            return blockedPlan(mode: mode, reason: "The image could not be identified. Re-select a readable installer ISO.")
+        }
         switch mode {
         case .reclaim:
             return reclaimPlan(drive: drive, config: config)
@@ -100,47 +118,38 @@ public struct BurnPlanner: Sendable {
     // MARK: - Windows (FAT32 + WIM split + Win11 bypass)
 
     private func windowsPlan(image: BootImage, drive: USBDrive, config: WriteConfig) -> BurnPlan {
+        guard config.fileSystem == .fat32, config.targetSystem == .uefi,
+              config.quickFormat, config.persistenceMB == 0 else {
+            return blockedPlan(mode: .single, reason: "Windows writing supports FAT32 and UEFI with quick format only.")
+        }
         let label = config.sanitizedLabel.isEmpty ? "WIN_USB" : config.sanitizedLabel
-        let slice = "\(drive.id)s1"
-        let isoMount = "/tmp/rufusmac-winiso"
-        var steps: [BurnStep] = []
-        var warnings = ["ALL DATA on \(drive.title) (\(drive.id)) will be ERASED."]
-
-        steps.append(BurnStep("Unmount \(drive.id)",
-            "\(tools.diskutil) unmountDisk force \(drive.deviceNode)"))
-        steps.append(BurnStep("Format \(label) as FAT32 (bootable for UEFI)",
-            "\(tools.diskutil) eraseDisk \"MS-DOS FAT32\" \(q(label)) MBRFormat \(drive.deviceNode)"))
-        steps.append(BurnStep("Resolve new volume mount point",
-            "VOL=$(\(tools.diskutil) info -plist \(slice) | /usr/bin/plutil -extract MountPoint raw -o - -)"))
-        steps.append(BurnStep("Mount Windows ISO read-only",
-            "mkdir -p \(isoMount); \(tools.hdiutil) attach -readonly -nobrowse -noverify -mountpoint \(isoMount) \(q(image.url.path))"))
-        steps.append(BurnStep("Copy Windows files (excluding install.wim)",
-            "\(tools.rsync) -a --exclude=sources/install.wim \(isoMount)/ \"$VOL\"/"))
-
-        if image.hasOversizedWIM {
-            warnings.append("install.wim exceeds 4 GB — it will be split into .swm files for FAT32 (handled automatically).")
-            steps.append(BurnStep("Split install.wim → install.swm (FAT32-safe)",
-                "\(tools.wimlib) split \(isoMount)/sources/install.wim \"$VOL\"/sources/install.swm 3800"))
-        } else {
-            steps.append(BurnStep("Copy install.wim",
-                "\(tools.rsync) -a \(isoMount)/sources/install.wim \"$VOL\"/sources/install.wim"))
+        let resource = Bundle.module.url(forResource: "windows-write", withExtension: "sh")!
+        guard let script = try? String(contentsOf: resource, encoding: .utf8) else {
+            return blockedPlan(mode: .single, reason: "Windows writer resource is missing.")
         }
-
+        let assignments = [
+            "ISO": image.url.path, "DISK": drive.deviceNode,
+            "EXPECTED_SIZE": String(drive.sizeBytes), "EXPECTED_NAME": drive.mediaName,
+            "LABEL": label, "SCHEME": config.partitionScheme.diskutilToken,
+            "WIMLIB": tools.wimlib, "DISKUTIL": tools.diskutil,
+            "HDIUTIL": tools.hdiutil, "RSYNC": tools.rsync,
+            "VERIFY": config.verifyAfterWrite ? "1" : "0"
+        ].sorted { $0.key < $1.key }.map { "\($0.key)=\(q($0.value))" }.joined(separator: "\n")
+        var steps = [BurnStep("Prepare and write Windows installer", assignments + "\n" + script)]
         if config.windows11Bypass {
-            steps.append(BurnStep("Inject Windows 11 bypass (TPM/SecureBoot/RAM/CPU + local account)",
-                "cat > \"$VOL\"/autounattend.xml <<'RMEOF'\n\(autounattendBypassXML)\nRMEOF"))
+            steps.append(BurnStep("Inject optional Windows 11 bypass",
+                "cat > \"$VOL/autounattend.xml\" <<'RMEOF'\n\(autounattendBypassXML)\nRMEOF"))
         }
+        steps.append(BurnStep("Flush and eject USB", "sync\n\(q(tools.diskutil)) eject \(q(drive.deviceNode))"))
+        return BurnPlan(mode: .single,
+            summary: "Create a Windows UEFI installer on \(drive.title) from \(image.name) (\(config.partitionScheme.rawValue), FAT32).",
+            warnings: ["ALL DATA on \(drive.title) (\(drive.id)) will be ERASED."],
+            steps: steps, experimental: false)
+    }
 
-        steps.append(BurnStep("Detach ISO", "\(tools.hdiutil) detach \(isoMount) -force || true"))
-        steps.append(BurnStep("Eject \(drive.id)", "\(tools.diskutil) eject \(drive.deviceNode) || true"))
-
-        return BurnPlan(
-            mode: .single,
-            summary: "Create a Windows installer USB on \(drive.title) from \(image.name)\(config.windows11Bypass ? " with Windows 11 requirement bypass" : "").",
-            warnings: warnings,
-            steps: steps,
-            experimental: false
-        )
+    private func blockedPlan(mode: BurnMode, reason: String) -> BurnPlan {
+        BurnPlan(mode: mode, summary: reason, warnings: [reason],
+                 steps: [BurnStep("Cannot write", "printf '%s\\n' \(q(reason)) >&2; exit 1")], experimental: false)
     }
 
     // MARK: - Reclaim (restore to a normal usable disk)

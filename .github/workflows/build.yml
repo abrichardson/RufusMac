@@ -21,7 +21,12 @@ jobs:
         run: swift build -c release
 
       - name: Test
-        run: swift test || echo "Tests require the Swift Testing framework (full Xcode)."
+        run: swift test
+
+      - name: Bundle Windows writer dependency
+        run: |
+          brew install wimlib
+          bash scripts/bundle_wimlib.sh
 
       - name: Package portable .dmg
         run: scripts/make_dmg.sh

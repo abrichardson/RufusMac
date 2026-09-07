@@ -1,3 +1,7 @@
+# Fork implementation note
+
+The Windows pipeline is now embedded from `Sources/RufusMacKit/Resources/windows-write.sh`. It checks prerequisites before erase, honors GPT/MBR, and verifies copies. Multiboot is disabled. See the root README for current capabilities; the original architecture notes below describe the starting design.
+
 # Architecture
 
 RufusMac is split into a UI-free engine and a thin SwiftUI app, so the risky

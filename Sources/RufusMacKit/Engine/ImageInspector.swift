@@ -15,15 +15,18 @@ public struct ImageInspector: Sendable {
             return BootImage(url: url, sizeBytes: size, kind: .raw, hasOversizedWIM: false)
         }
 
+        if let existing = try? await existingMount(url) {
+            let (kind, oversized) = classify(mountPoint: existing)
+            return BootImage(url: url, sizeBytes: size, kind: kind, hasOversizedWIM: oversized)
+        }
         if let mount = try? await mountReadOnly(url) {
-            defer { Task { try? await detach(mount) } }
             let (kind, oversized) = classify(mountPoint: mount)
+            try? await detach(mount)
             return BootImage(url: url, sizeBytes: size, kind: kind, hasOversizedWIM: oversized)
         }
 
-        // Couldn't mount (some hybrid ISOs use unusual layouts) — assume Linux/hybrid,
-        // which is handled safely by the raw `dd` writer.
-        return BootImage(url: url, sizeBytes: size, kind: .linux, hasOversizedWIM: false)
+        // Never guess Linux after a mount failure: this may be a Windows ISO.
+        return BootImage(url: url, sizeBytes: size, kind: .unknown, hasOversizedWIM: false)
     }
 
     // MARK: - Helpers
@@ -43,7 +46,7 @@ public struct ImageInspector: Sendable {
             let wimPath = "\(mountPoint)/sources/install.wim"
             if let attrs = try? fm.attributesOfItem(atPath: wimPath),
                let bytes = (attrs[.size] as? NSNumber)?.int64Value {
-                oversized = bytes > 4_000_000_000 // FAT32 4 GB file limit
+                oversized = bytes > 4_294_967_295 // FAT32 4 GB file limit
             }
             return (.windows, oversized)
         }
@@ -53,14 +56,32 @@ public struct ImageInspector: Sendable {
         return (isLinux ? .linux : .unknown, false)
     }
 
+    private func existingMount(_ url: URL) async throws -> String? {
+        let output = try await Shell.output(ToolPaths().hdiutil, ["info", "-plist"])
+        let plist = try PropertyListSerialization.propertyList(from: Data(output.utf8), format: nil) as? [String: Any]
+        for image in plist?["images"] as? [[String: Any]] ?? [] {
+            guard let path = image["image-path"] as? String,
+                  URL(fileURLWithPath: path).standardizedFileURL == url.standardizedFileURL else { continue }
+            for entity in image["system-entities"] as? [[String: Any]] ?? [] {
+                if let mount = entity["mount-point"] as? String { return mount }
+            }
+        }
+        return nil
+    }
+
     private func mountReadOnly(_ url: URL) async throws -> String {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("rm-mount-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        do {
         _ = try await Shell.output(ToolPaths().hdiutil, [
             "attach", "-readonly", "-nobrowse", "-noverify",
             "-mountpoint", dir.path, url.path
         ])
+        } catch {
+            try? FileManager.default.removeItem(at: dir)
+            throw error
+        }
         return dir.path
     }
 

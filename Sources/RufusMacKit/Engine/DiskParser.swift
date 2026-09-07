@@ -57,6 +57,8 @@ public enum DiskParser {
             return nil
         }
 
+        if let whole = info["WholeDisk"] as? Bool, !whole { return nil }
+        if let physical = info["VirtualOrPhysical"] as? String, physical != "Physical" { return nil }
         let isInternal = (info["Internal"] as? Bool) ?? true   // fail safe: assume internal
         let isRemovable = (info["Removable"] as? Bool) ?? (info["RemovableMedia"] as? Bool) ?? false
         let isEjectable = (info["Ejectable"] as? Bool) ?? false

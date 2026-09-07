@@ -37,7 +37,7 @@ final class AppModel {
     var showsFormatOptions: Bool { mode == .reclaim || isWindowsSingle }
 
     var canStart: Bool {
-        guard !isRunning, selectedDrive != nil else { return false }
+        guard !isRunning, !isInspecting, mode != .multiboot, selectedDrive != nil else { return false }
         if requiresImage && image == nil { return false }
         return true
     }
@@ -67,6 +67,11 @@ final class AppModel {
     }
 
     func selectImage(_ url: URL) async {
+        guard ["iso", "img", "dmg"].contains(url.pathExtension.lowercased()) else {
+            resultIsError = true
+            resultMessage = "Select an ISO, IMG, or DMG disk image."
+            return
+        }
         isInspecting = true
         defer { isInspecting = false }
         let inspected = await inspector.inspect(url)

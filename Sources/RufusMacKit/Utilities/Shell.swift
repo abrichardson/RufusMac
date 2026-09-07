@@ -27,6 +27,10 @@ enum ShellError: LocalizedError {
 /// (`diskutil info`, `hdiutil`, checksum tools). Destructive work goes through
 /// `PrivilegedRunner` instead.
 enum Shell {
+    static func quote(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
     @discardableResult
     static func run(_ launchPath: String, _ arguments: [String]) async throws -> ShellResult {
         try await withCheckedThrowingContinuation { continuation in
@@ -47,8 +51,18 @@ enum Shell {
                     return
                 }
 
+                // Drain stderr concurrently so a full pipe cannot deadlock the writer.
+                let errorRead = DispatchGroup()
+                errorRead.enter()
+                final class Buffer: @unchecked Sendable { var data = Data() }
+                let errors = Buffer()
+                DispatchQueue.global().async {
+                    errors.data = errPipe.fileHandleForReading.readDataToEndOfFile()
+                    errorRead.leave()
+                }
                 let outData = outPipe.fileHandleForReading.readDataToEndOfFile()
-                let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
+                errorRead.wait()
+                let errData = errors.data
                 process.waitUntilExit()
 
                 continuation.resume(returning: ShellResult(

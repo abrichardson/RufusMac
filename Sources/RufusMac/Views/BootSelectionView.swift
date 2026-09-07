@@ -1,12 +1,12 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import AppKit
 import RufusMacKit
 
 /// Drag-and-drop / file-picker selection of the boot image, with auto-detected
 /// type badge and size.
 struct BootSelectionView: View {
     @Bindable var model: AppModel
-    @State private var showImporter = false
     @State private var isTargeted = false
     @State private var showCatalog = false
 
@@ -39,32 +39,27 @@ struct BootSelectionView: View {
                 }
             }
         }
-        .fileImporter(
-            isPresented: $showImporter,
-            allowedContentTypes: allowedTypes,
-            allowsMultipleSelection: false
-        ) { result in
-            if case let .success(urls) = result, let url = urls.first {
-                Task { await model.selectImage(url) }
-            }
-        }
         .sheet(isPresented: $showCatalog) {
             CatalogView { showCatalog = false }
         }
     }
 
-    private var allowedTypes: [UTType] {
-        [
-            UTType(filenameExtension: "iso"),
-            UTType(filenameExtension: "img"),
-            .diskImage,
-            .data
-        ].compactMap { $0 }
+    private func chooseImage() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        // Extension filtering also accepts ISO files whose registered UTI does
+        // not conform to public.data (seen with third-party ISO associations).
+        panel.allowedFileTypes = ["iso", "img", "dmg"]
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            Task { await model.selectImage(url) }
+        }
     }
 
     private var dropZone: some View {
         Button {
-            showImporter = true
+            chooseImage()
         } label: {
             VStack(spacing: 8) {
                 Image(systemName: "arrow.down.doc")
@@ -111,7 +106,7 @@ struct BootSelectionView: View {
             }
             Spacer()
             Button {
-                showImporter = true
+                chooseImage()
             } label: { Text("Change") }
                 .buttonStyle(.plain).foregroundStyle(Brand.accent)
             Button {

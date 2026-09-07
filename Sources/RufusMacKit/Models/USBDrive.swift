@@ -68,6 +68,6 @@ public struct USBDrive: Identifiable, Hashable, Sendable {
     /// Hard safety gate. A drive is only a valid target if it is clearly
     /// external and removable. Internal disks can never be targets.
     public var isSafeTarget: Bool {
-        !isInternal && (isRemovable || isEjectable || busProtocol.uppercased() == "USB")
+        id.range(of: "^disk[0-9]+$", options: .regularExpression) != nil && sizeBytes > 0 && !isInternal && busProtocol.uppercased() == "USB"
     }
 }
