@@ -10,95 +10,130 @@ extension BurnMode {
         case .reclaim: return "arrow.counterclockwise"
         }
     }
+    var navigationTitle: String {
+        switch self {
+        case .single: return "Create installer"
+        case .dd: return "Write disk image"
+        case .reclaim: return "Restore USB"
+        case .multiboot: return "Multiboot"
+        }
+    }
 }
 
-/// Root view: header, mode switcher, contextual configuration cards, the
-/// primary action, and the persistent footer — all on Liquid Glass.
 struct ContentView: View {
     @State private var model = AppModel()
-
-    private var modeItems: [GlassSegmented<BurnMode>.Item] {
-        BurnMode.allCases.map { .init(value: $0, label: $0.rawValue, systemImage: $0.systemImage) }
-    }
+    @State private var showCredits = false
 
     var body: some View {
         ZStack {
-            AppBackground()
-
-            VStack(spacing: 16) {
-                header
-                GlassSegmented(items: modeItems, selection: $model.mode)
-
-                ScrollView {
-                    GlassEffectContainer(spacing: 14) {
-                        VStack(spacing: 14) {
+            HStack(spacing: 0) {
+                sidebar
+                VStack(spacing: 0) {
+                    header
+                    ScrollView {
+                        VStack(spacing: 18) {
+                            if model.requiresImage { BootSelectionView(model: model) }
                             DevicePickerView(model: model)
-                            if model.requiresImage {
-                                BootSelectionView(model: model)
-                            }
                             FormatOptionsView(model: model)
                         }
+                        .padding(28)
                     }
-                    .padding(.horizontal, 2)
-                    .padding(.bottom, 4)
+                    actionBar
                 }
-
-                startButton
-                FooterView()
+                .background(Color(nsColor: .windowBackgroundColor))
             }
-            .padding(20)
-
+            .disabled(model.isRunning)
             if model.isRunning {
                 RunningOverlay(stage: model.runningStage, detail: model.runningDetail, startedAt: model.runStartedAt)
             }
         }
-        .animation(.smooth(duration: 0.3), value: model.mode)
-        .animation(.smooth(duration: 0.3), value: model.isRunning)
+        .tint(Brand.accent)
         .task { await model.refreshDrives() }
-        .sheet(isPresented: $model.showConfirm) {
-            ConfirmationView(model: model)
+        .sheet(isPresented: $model.showConfirm) { ConfirmationView(model: model) }
+        .sheet(isPresented: $showCredits) { CreditsView() }
+        .alert(model.resultMessage ?? "", isPresented: Binding(
+            get: { model.resultMessage != nil },
+            set: { if !$0 { model.dismissResult() } }
+        )) { Button("OK") { model.dismissResult() } }
+    }
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 12) {
+                Image(systemName: "externaldrive.fill.badge.plus")
+                    .font(.system(size: 27, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(Brand.accent, in: .rect(cornerRadius: 15))
+                Text(Brand.name).font(.system(size: 23, weight: .bold))
+                Text("A fresh start.\nOne USB away.")
+                    .font(.callout).foregroundStyle(.white.opacity(0.6))
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("WORKSPACE").font(.system(size: 10, weight: .semibold)).tracking(1.5)
+                    .foregroundStyle(.white.opacity(0.4)).padding(.bottom, 8)
+                ForEach([BurnMode.single, .dd, .reclaim]) { mode in
+                    Button { model.mode = mode } label: {
+                        Label(mode.navigationTitle, systemImage: mode.systemImage)
+                            .font(.system(size: 12, weight: .medium))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12).padding(.vertical, 12)
+                            .background(model.mode == mode ? .white.opacity(0.12) : .clear, in: .rect(cornerRadius: 9))
+                            .foregroundStyle(model.mode == mode ? .white : .white.opacity(0.58))
+                    }.buttonStyle(.plain)
+                }
+            }
+            Spacer()
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Built for macOS", systemImage: "desktopcomputer")
+                    .font(.caption).foregroundStyle(.white.opacity(0.45))
+                Divider().overlay(.white.opacity(0.1))
+                FooterView()
+                Button("About & credits") { showCredits = true }
+                    .buttonStyle(.plain).font(.caption).foregroundStyle(.white.opacity(0.55))
+            }
         }
-        .alert(
-            model.resultMessage ?? "",
-            isPresented: Binding(
-                get: { model.resultMessage != nil },
-                set: { if !$0 { model.dismissResult() } }
-            )
-        ) {
-            Button("OK") { model.dismissResult() }
-        }
+        .padding(22)
+        .frame(width: 220)
+        .frame(maxHeight: .infinity)
+        .foregroundStyle(.white)
+        .background(Color(red: 0.065, green: 0.09, blue: 0.15))
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "internaldrive.fill")
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(Brand.accent)
-                .padding(10)
-                .glassEffect(.regular.tint(Brand.accent.opacity(0.35)), in: .rect(cornerRadius: 14))
-            VStack(alignment: .leading, spacing: 1) {
-                Text(Brand.name)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                Text(Brand.tagline)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 7) {
+                Text(model.mode.navigationTitle).font(.system(size: 27, weight: .semibold))
+                Text(model.mode == .reclaim ? "Turn your USB back into everyday storage." : "Choose your image, connect a USB, and make it bootable.")
+                    .font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
+            Text("MAC EDITION").font(.system(size: 9, weight: .bold)).tracking(1)
+                .padding(8).background(Brand.accent.opacity(0.08), in: .capsule)
+                .foregroundStyle(Brand.accent)
         }
+        .padding(.horizontal, 28).padding(.top, 26).padding(.bottom, 16)
     }
 
-    private var startButton: some View {
-        Button {
-            model.prepare()
-        } label: {
-            Label(model.startTitle, systemImage: model.mode == .reclaim ? "arrow.counterclockwise" : "bolt.fill")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
+    private var actionBar: some View {
+        HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(model.selectedDrive?.title ?? "Connect a USB to continue")
+                    .font(.callout.weight(.semibold)).lineLimit(1)
+                Text(model.selectedDrive == nil ? "Your internal storage is excluded." : "All data on the selected USB will be erased.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button { model.prepare() } label: {
+                Label(model.mode == .reclaim ? "Review & restore" : "Review & write", systemImage: "arrow.right")
+                    .font(.callout.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!model.canStart)
+            .keyboardShortcut(.defaultAction)
         }
-        .buttonStyle(.glassProminent)
-        .tint(model.mode == .reclaim ? Brand.danger : Brand.accent)
-        .disabled(!model.canStart)
-        .keyboardShortcut(.defaultAction)
+        .padding(22)
+        .background(.regularMaterial)
+        .overlay(alignment: .top) { Divider() }
     }
 }

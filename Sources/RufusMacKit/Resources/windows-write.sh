@@ -89,7 +89,7 @@ on run argv
     repeat with i from 2 to count of argv
         set formatCommand to formatCommand & " " & quoted form of (item i of argv)
     end repeat
-    do shell script formatCommand with prompt "RufusMac needs to format the selected USB drive." with administrator privileges
+    do shell script formatCommand with prompt "Macus needs to format the selected USB drive." with administrator privileges
 end run
 APPLESCRIPT
 else

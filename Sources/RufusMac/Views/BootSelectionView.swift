@@ -14,7 +14,7 @@ struct BootSelectionView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    SectionLabel(title: "Boot selection", systemImage: "opticaldisc")
+                    SectionLabel(title: "01 / Installation image", systemImage: "opticaldisc")
                     Spacer()
                     Button {
                         showCatalog = true
@@ -71,13 +71,13 @@ struct BootSelectionView: View {
                 Image(systemName: "arrow.down.doc")
                     .font(.system(size: 28))
                     .foregroundStyle(Brand.accent)
-                Text("Drag an ISO / IMG here")
+                Text("Drop your disk image here")
                     .fontWeight(.medium)
-                Text("or click to choose · Windows, Linux, and other images supported")
+                Text("or click to browse · ISO, IMG, and DMG")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, minHeight: 96)
+            .frame(maxWidth: .infinity, minHeight: 112)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

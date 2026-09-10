@@ -34,6 +34,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RufusMac-dmg
-          path: dist/RufusMac.dmg
+          name: Macus-dmg
+          path: dist/Macus.dmg
           if-no-files-found: warn

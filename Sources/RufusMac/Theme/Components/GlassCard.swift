@@ -6,13 +6,14 @@ import SwiftUI
 /// look that defines the RufusMac UI. Place multiple cards inside a
 /// `GlassEffectContainer` so their glass blends and morphs together.
 struct GlassCard<Content: View>: View {
-    var cornerRadius: CGFloat = 22
+    var cornerRadius: CGFloat = 14
     @ViewBuilder var content: Content
 
     var body: some View {
         content
-            .padding(16)
+            .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+            .background(Color(nsColor: .controlBackgroundColor), in: .rect(cornerRadius: cornerRadius))
+            .overlay { RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(.primary.opacity(0.07)).allowsHitTesting(false) }
     }
 }

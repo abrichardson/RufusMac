@@ -12,8 +12,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 CONFIG="${1:-release}"
-APP_NAME="RufusMac"
-BUNDLE_ID="com.h4rithd.rufusmac"
+APP_NAME="Macus"
+PRODUCT_NAME="RufusMac"
+BUNDLE_ID="com.abrichardson.macus"
 VERSION="$(cat "$ROOT/VERSION" 2>/dev/null || echo 0.1.0)"
 BUILD_NUM="$(date +%Y%m%d%H%M)"
 
@@ -22,10 +23,10 @@ APP="$DIST/$APP_NAME.app"
 MACOS_DIR="$APP/Contents/MacOS"
 RES_DIR="$APP/Contents/Resources"
 
-echo "▶ Building RufusMac ($CONFIG)…"
+echo "▶ Building Macus ($CONFIG)…"
 swift build -c "$CONFIG"
 BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
-BIN="$BIN_DIR/$APP_NAME"
+BIN="$BIN_DIR/$PRODUCT_NAME"
 
 echo "▶ Assembling $APP …"
 rm -rf "$APP"
@@ -63,7 +64,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>NSHighResolutionCapable</key><true/>
   <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
-  <key>NSHumanReadableCopyright</key><string>© Harith Dilshan — h4rithd.com · GPLv3</string>
+  <key>NSHumanReadableCopyright</key><string>© Adam Richardson. Based on RufusMac © Harith Dilshan. GPLv3.</string>
 </dict>
 </plist>
 PLIST

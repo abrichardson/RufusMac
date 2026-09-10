@@ -8,7 +8,7 @@ struct FormatOptionsView: View {
     var body: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: 14) {
-                SectionLabel(title: "Options", systemImage: "slider.horizontal.3")
+                SectionLabel(title: model.requiresImage ? "03 / Make it yours" : "Format settings", systemImage: "slider.horizontal.3")
 
                 if model.showsFormatOptions || model.mode == .multiboot {
                     labelField

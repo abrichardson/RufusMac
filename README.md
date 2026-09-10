@@ -1,4 +1,6 @@
-# RufusMac — Windows installer fixes
+# Macus
+
+Made by Adam Richardson. A native macOS app for creating bootable USB installers.
 
 A fork of [h4rithd/RufusMac](https://github.com/h4rithd/RufusMac), focused on creating Windows installation USBs on macOS 26 and Apple Silicon. Original app by Harith Dilshan; GPLv3 license retained. This is not the official Rufus project.
 
@@ -29,7 +31,7 @@ swift test
 bash scripts/build_app.sh
 ```
 
-Open `dist/RufusMac.app`. The build bundles wimlib and its library so it does not depend on Homebrew at runtime. It is locally ad-hoc signed, **not Apple notarized**. Building this fork does not provide a Developer ID or eliminate Gatekeeper checks on downloaded distributions.
+Open `dist/Macus.app`. The build bundles wimlib and its library so it does not depend on Homebrew at runtime. It is locally ad-hoc signed, **not Apple notarized**. Building this fork does not provide a Developer ID or eliminate Gatekeeper checks on downloaded distributions.
 
 ## Use
 

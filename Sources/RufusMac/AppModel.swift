@@ -118,7 +118,7 @@ final class AppModel {
         do {
             let output = try await runner.run(
                 script: plan.script,
-                prompt: "RufusMac needs administrator access to \(plan.mode.rawValue.lowercased()) on \(plan.summary)",
+                prompt: "\(Brand.name) needs administrator access to \(plan.mode.rawValue.lowercased()) on \(plan.summary)",
                 requiresAdministrator: plan.mode != .single,
                 onOutput: { [weak self] text in
                     Task { @MainActor in self?.receiveOutput(text) }

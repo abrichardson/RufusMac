@@ -10,7 +10,7 @@ struct DevicePickerView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    SectionLabel(title: "Device", systemImage: "externaldrive")
+                    SectionLabel(title: model.requiresImage ? "02 / USB destination" : "USB destination", systemImage: "externaldrive")
                     Spacer()
                     Button {
                         Task { await model.refreshDrives() }
@@ -75,9 +75,7 @@ struct DevicePickerView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .glassEffect(
-            isSelected ? .regular.tint(Brand.accent.opacity(0.28)) : .regular,
-            in: .rect(cornerRadius: 14)
-        )
+        .background(isSelected ? Brand.accent.opacity(0.08) : Color.primary.opacity(0.025), in: .rect(cornerRadius: 10))
+        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(isSelected ? Brand.accent.opacity(0.35) : .clear).allowsHitTesting(false) }
     }
 }

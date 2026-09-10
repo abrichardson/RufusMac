@@ -7,16 +7,18 @@ import SwiftUI
 /// material, available natively on macOS 26 (Tahoe) and later.
 @main
 struct RufusMacApp: App {
+    @State private var showCredits = false
     var body: some Scene {
         Window(Brand.name, id: "main") {
             ContentView()
-                .frame(minWidth: 660, idealWidth: 700, minHeight: 800)
+                .frame(minWidth: 880, idealWidth: 940, minHeight: 700)
+                .sheet(isPresented: $showCredits) { CreditsView() }
         }
         .windowResizability(.contentMinSize)
-        .defaultSize(width: 700, height: 820)
+        .defaultSize(width: 940, height: 840)
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("About \(Brand.name)") { /* wired in M6 */ }
+                Button("About \(Brand.name)") { showCredits = true }
             }
         }
     }

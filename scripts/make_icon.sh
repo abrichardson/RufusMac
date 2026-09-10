@@ -23,8 +23,8 @@ let squircle = NSBezierPath(roundedRect: rect, xRadius: 224, yRadius: 224)
 squircle.addClip()
 
 let gradient = NSGradient(
-    starting: NSColor(srgbRed: 0.11, green: 0.80, blue: 0.74, alpha: 1),
-    ending:   NSColor(srgbRed: 0.06, green: 0.38, blue: 0.80, alpha: 1)
+    starting: NSColor(srgbRed: 0.29, green: 0.46, blue: 0.99, alpha: 1),
+    ending:   NSColor(srgbRed: 0.10, green: 0.16, blue: 0.43, alpha: 1)
 )!
 gradient.draw(in: rect, angle: -45)
 
@@ -37,7 +37,7 @@ highlight.draw(in: NSRect(x: 0, y: side * 0.5, width: side, height: side * 0.5),
 
 let config = NSImage.SymbolConfiguration(pointSize: 560, weight: .bold)
     .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
-if let symbol = NSImage(systemSymbolName: "internaldrive.fill", accessibilityDescription: nil)?
+if let symbol = NSImage(systemSymbolName: "externaldrive.fill.badge.plus", accessibilityDescription: nil)?
     .withSymbolConfiguration(config) {
     let s = symbol.size
     let r = NSRect(x: (side - s.width) / 2, y: (side - s.height) / 2, width: s.width, height: s.height)

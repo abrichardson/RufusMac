@@ -12,7 +12,7 @@ enum Brand {
     static let repoURL = URL(string: RufusMacInfo.repo)!
 
     /// Primary accent — a refined teal that reads well on Liquid Glass.
-    static let accent = Color(red: 0.13, green: 0.74, blue: 0.71)
+    static let accent = Color(red: 0.22, green: 0.37, blue: 0.91)
     /// Deeper companion accent for gradients.
     static let accentDeep = Color(red: 0.09, green: 0.46, blue: 0.78)
     /// Destructive / warning red for disk-erase actions.

@@ -18,7 +18,7 @@ struct CatalogView: View {
                 Button("Done", action: onClose)
                     .keyboardShortcut(.cancelAction)
             }
-            Text("Jump to an official download. Verify the checksum after downloading, then drag the ISO into RufusMac.")
+            Text("Jump to an official download. Verify the checksum after downloading, then drag the ISO into \(Brand.name).")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
