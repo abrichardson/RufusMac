@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# fetch_thirdparty.sh — fetch the external CLI tools RufusMac bundles for the
+# fetch_thirdparty.sh — fetch the external CLI tools Macus bundles for the
 # Windows / multiboot / persistence engines. Built-in tools (diskutil, hdiutil,
 # dd) are always present; this adds the extras into ./vendor, which
-# scripts/build_app.sh copies into RufusMac.app/Contents/Resources/thirdparty.
+# scripts/build_app.sh copies into Macus.app/Contents/Resources/thirdparty.
 #
 # Best-effort: prefers Homebrew for wimlib/e2fsprogs. Linux/Reclaim modes work
 # WITHOUT these; Windows (WIM split) and Multiboot/persistence need them.

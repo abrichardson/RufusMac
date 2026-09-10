@@ -2,7 +2,7 @@
 
 Created by SynapsEdge. A native macOS app for creating bootable USB installers.
 
-A fork of [h4rithd/RufusMac](https://github.com/h4rithd/RufusMac), focused on creating Windows installation USBs on macOS 26 and Apple Silicon. Original app by Harith Dilshan; GPLv3 license retained. This is not the official Rufus project.
+Creates Windows installation USBs on macOS 26 and Apple Silicon. See Credits below for the original project and license.
 
 ## What works in this fork
 
@@ -54,9 +54,9 @@ For a Windows x64 ISO, the target is an Intel/AMD PC. Creating the USB on Apple 
 Read-only diagnostics:
 
 ```sh
-swift run rmctl inspect /path/to/Windows.iso
-swift run rmctl list
-swift run rmctl preview windows /path/to/Windows.iso
+swift run macusctl inspect /path/to/Windows.iso
+swift run macusctl list
+swift run macusctl preview windows /path/to/Windows.iso
 ```
 
 ## Credits

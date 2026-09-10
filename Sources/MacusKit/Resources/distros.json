@@ -1,0 +1,112 @@
+{
+  "entries": [
+    {
+      "id": "ubuntu-desktop",
+      "name": "Ubuntu Desktop",
+      "category": "Linux",
+      "summary": "The most popular desktop Linux. Great first choice for a live/installer USB.",
+      "pageURL": "https://ubuntu.com/download/desktop",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "fedora-workstation",
+      "name": "Fedora Workstation",
+      "category": "Linux",
+      "summary": "Cutting-edge, polished GNOME desktop backed by Red Hat.",
+      "pageURL": "https://fedoraproject.org/workstation/",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "debian",
+      "name": "Debian",
+      "category": "Linux",
+      "summary": "Rock-solid, universal operating system. The base of many distros.",
+      "pageURL": "https://www.debian.org/distrib/",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "linuxmint",
+      "name": "Linux Mint",
+      "category": "Linux",
+      "summary": "Familiar, beginner-friendly desktop based on Ubuntu.",
+      "pageURL": "https://linuxmint.com/download.php",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "popos",
+      "name": "Pop!_OS",
+      "category": "Linux",
+      "summary": "System76's developer- and gamer-friendly Ubuntu derivative.",
+      "pageURL": "https://pop.system76.com/",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "arch",
+      "name": "Arch Linux",
+      "category": "Linux",
+      "summary": "Minimal, rolling-release distro for users who want full control.",
+      "pageURL": "https://archlinux.org/download/",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "kali",
+      "name": "Kali Linux",
+      "category": "Security",
+      "summary": "Penetration-testing and security-auditing distribution.",
+      "pageURL": "https://www.kali.org/get-kali/",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "tails",
+      "name": "Tails",
+      "category": "Security",
+      "summary": "Amnesic live system that routes everything through Tor.",
+      "pageURL": "https://tails.net/install/",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "mxlinux",
+      "name": "MX Linux",
+      "category": "Linux",
+      "summary": "Lightweight, stable Debian-based distro with great persistence support.",
+      "pageURL": "https://mxlinux.org/download-links/",
+      "directURL": null,
+      "kindRaw": "Linux"
+    },
+    {
+      "id": "windows11",
+      "name": "Windows 11",
+      "category": "Windows",
+      "summary": "Microsoft's official Windows 11 disk image. Use with the Win11 bypass.",
+      "pageURL": "https://www.microsoft.com/software-download/windows11",
+      "directURL": null,
+      "kindRaw": "Windows"
+    },
+    {
+      "id": "windows10",
+      "name": "Windows 10",
+      "category": "Windows",
+      "summary": "Microsoft's official Windows 10 disk image.",
+      "pageURL": "https://www.microsoft.com/software-download/windows10",
+      "directURL": null,
+      "kindRaw": "Windows"
+    },
+    {
+      "id": "ventoy",
+      "name": "Ventoy",
+      "category": "Utility",
+      "summary": "Multiboot engine that powers Macus's experimental Multiboot mode.",
+      "pageURL": "https://www.ventoy.net/en/download.html",
+      "directURL": null,
+      "kindRaw": "Disk image"
+    }
+  ]
+}

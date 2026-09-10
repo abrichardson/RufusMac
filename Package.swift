@@ -1,49 +1,49 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
-// RufusMac — a native macOS bootable-USB creator with Liquid Glass UI.
+// Macus — a native macOS bootable-USB creator with Liquid Glass UI.
 // Developed by Harith Dilshan / h4rithd.com — built with the help of Claude Code.
 //
 // Two targets keep UI and logic cleanly separated and testable:
-//   • RufusMacKit — pure Swift engine (disk enumeration, writers, checksums). No UI.
-//   • RufusMac    — the SwiftUI app (@main), depends on RufusMacKit.
+//   • MacusKit — pure Swift engine (disk enumeration, writers, checksums). No UI.
+//   • Macus    — the SwiftUI app (@main), depends on MacusKit.
 //
 // Builds with the Command Line Tools toolchain (no full Xcode required).
-// `scripts/build_app.sh` wraps the product into a portable RufusMac.app.
+// `scripts/build_app.sh` wraps the product into a portable Macus.app.
 let commonSwiftSettings: [SwiftSetting] = [
     .swiftLanguageMode(.v5)
 ]
 
 let package = Package(
-    name: "RufusMac",
+    name: "Macus",
     platforms: [
         .macOS("26.0") // Liquid Glass requires the macOS 26 SDK
     ],
     targets: [
         .target(
-            name: "RufusMacKit",
-            path: "Sources/RufusMacKit",
+            name: "MacusKit",
+            path: "Sources/MacusKit",
             resources: [
                 .process("Resources")
             ],
             swiftSettings: commonSwiftSettings
         ),
         .executableTarget(
-            name: "RufusMac",
-            dependencies: ["RufusMacKit"],
-            path: "Sources/RufusMac",
+            name: "Macus",
+            dependencies: ["MacusKit"],
+            path: "Sources/Macus",
             swiftSettings: commonSwiftSettings
         ),
         .executableTarget(
-            name: "rmctl",
-            dependencies: ["RufusMacKit"],
-            path: "Sources/rmctl",
+            name: "macusctl",
+            dependencies: ["MacusKit"],
+            path: "Sources/macusctl",
             swiftSettings: commonSwiftSettings
         ),
         .testTarget(
-            name: "RufusMacKitTests",
-            dependencies: ["RufusMacKit"],
-            path: "Tests/RufusMacKitTests",
+            name: "MacusKitTests",
+            dependencies: ["MacusKit"],
+            path: "Tests/MacusKitTests",
             swiftSettings: commonSwiftSettings
         )
     ]
