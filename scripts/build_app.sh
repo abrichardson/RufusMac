@@ -64,7 +64,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>NSHighResolutionCapable</key><true/>
   <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
-  <key>NSHumanReadableCopyright</key><string>© Adam Richardson. Based on RufusMac © Harith Dilshan. GPLv3.</string>
+  <key>NSHumanReadableCopyright</key><string>© SynapsEdge. Based on RufusMac © Harith Dilshan. GPLv3.</string>
 </dict>
 </plist>
 PLIST

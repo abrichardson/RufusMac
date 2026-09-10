@@ -1,6 +1,6 @@
 # Macus
 
-Made by Adam Richardson. A native macOS app for creating bootable USB installers.
+Created by SynapsEdge. A native macOS app for creating bootable USB installers.
 
 A fork of [h4rithd/RufusMac](https://github.com/h4rithd/RufusMac), focused on creating Windows installation USBs on macOS 26 and Apple Silicon. Original app by Harith Dilshan; GPLv3 license retained. This is not the official Rufus project.
 
