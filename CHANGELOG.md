@@ -11,6 +11,8 @@
 
 ## 0.4.0
 
+- Privacy rebuild: neutral build paths, stripped debug data, an explicit resource list, and a packaging check for personal build paths.
+
 - Keep diagnostics media outside Macus. Select a separately downloaded USB image or ISO with its matching SHA-256 file; remember the selection between launches.
 - Report GPU model/driver, RAM type/module capacity/speed/part numbers, and drive model/capacity/HDD-or-SSD/interface in the live app, HTML/JSON/CSV and Mac report viewer.
 - Build and distribute the Mac app independently from diagnostics images.

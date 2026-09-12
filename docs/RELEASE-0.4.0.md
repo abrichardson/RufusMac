@@ -1,3 +1,5 @@
+Privacy rebuild: the Mac downloads were reissued on September 12, 2026 to remove local build paths and an obsolete bundled script. Re-download the Mac app if you obtained an earlier copy. Quick Scan 1.1 is unchanged.
+
 Macus 0.4.0 keeps the Mac application small and distributes PC diagnostics separately. Quick Scan 1.1 boots from a regular USB, collects inventory and basic health data, saves reports to that same USB, and shuts down automatically.
 
 ## Downloads

@@ -23,19 +23,34 @@ APP="$DIST/$APP_NAME.app"
 MACOS_DIR="$APP/Contents/MacOS"
 RES_DIR="$APP/Contents/Resources"
 
+# SwiftPM embeds its resource fallback path. Use a neutral temporary build location.
+BUILD_DIR=$(mktemp -d /tmp/macus-release.XXXXXX)
+trap 'rm -rf "$BUILD_DIR"' EXIT
 echo "▶ Building Macus ($CONFIG)…"
-swift build -c "$CONFIG"
-BIN_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
+swift build --scratch-path "$BUILD_DIR" -c "$CONFIG" -Xswiftc -debug-prefix-map -Xswiftc "$ROOT=/src/Macus" -Xswiftc -file-prefix-map -Xswiftc "$ROOT=/src/Macus" -Xcc "-ffile-prefix-map=$ROOT=/src/Macus"
+BIN_DIR="$(swift build --scratch-path "$BUILD_DIR" -c "$CONFIG" --show-bin-path)"
 BIN="$BIN_DIR/$PRODUCT_NAME"
 
 echo "▶ Assembling $APP …"
 rm -rf "$APP"
 mkdir -p "$MACOS_DIR" "$RES_DIR"
 cp "$BIN" "$MACOS_DIR/$APP_NAME"
+# Distribution binaries must not expose local debug/build paths.
+strip -S "$MACOS_DIR/$APP_NAME"
+if /usr/bin/strings "$MACOS_DIR/$APP_NAME" | /usr/bin/grep -E '/Users/[^/]+/' >/dev/null; then
+  echo 'Refusing to package a binary containing a personal build path.' >&2
+  exit 1
+fi
 
 # Copy any SPM resource bundles next to the executable.
 shopt -s nullglob
-for b in "$BIN_DIR"/Macus_MacusKit.bundle; do cp -R "$b" "$RES_DIR/"; done
+# Copy only current declared resources; incremental SPM bundles can retain deleted files.
+for b in "$BIN_DIR"/Macus_MacusKit.bundle; do
+  target="$RES_DIR/$(basename "$b")"
+  mkdir -p "$target"
+  for item in distros.json windows-write.sh InventoryToolkit; do cp -R "$b/$item" "$target/"; done
+  find "$target" -type d -name __pycache__ -exec rm -rf {} +
+done
 shopt -u nullglob
 
 # Diagnostics ISO/USB images are distributed separately, never bundled.
