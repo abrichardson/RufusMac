@@ -6,7 +6,7 @@ Creates Windows installation USBs on macOS 26 and Apple Silicon. See Credits bel
 
 ## Downloads
 
-[Download Macus 0.4.0 and Quick Scan 1.1](https://github.com/abrichardson/RufusMac/releases/tag/v0.4.0).
+[Download Macus 0.4.0 and Quick Scan 1.1](https://github.com/abrichardson/Macus/releases/tag/v0.4.0).
 
 - **Macus-0.4.0-arm64.dmg**: the Mac application for Apple Silicon, macOS 26 or later. Open the DMG and drag Macus into Applications. A ZIP is also available.
 - **Macus-QuickScan-USB.img.zip**: separate PC boot image. Extract it and keep the `.img` and `.sha256` together, then select the image in Macus.

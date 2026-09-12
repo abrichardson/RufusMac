@@ -7,6 +7,6 @@ public enum MacusInfo {
     public static let version = "0.4.0"
     public static let tagline = "A fresh start. One USB away."
     public static let author = "SynapsEdge"
-    public static let site = "github.com/abrichardson/RufusMac"
-    public static let repo = "https://github.com/abrichardson/RufusMac"
+    public static let site = "github.com/abrichardson/Macus"
+    public static let repo = "https://github.com/abrichardson/Macus"
 }
