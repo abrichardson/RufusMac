@@ -11,6 +11,8 @@
 
 ## 0.4.0
 
+- Developer ID signed and Apple-notarized distribution, with stapled tickets and Gatekeeper verification. Add repeatable signing/notarization scripts using Keychain credentials.
+
 - Privacy rebuild: neutral build paths, stripped debug data, an explicit resource list, and a packaging check for personal build paths.
 
 - Keep diagnostics media outside Macus. Select a separately downloaded USB image or ISO with its matching SHA-256 file; remember the selection between launches.

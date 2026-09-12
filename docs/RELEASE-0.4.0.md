@@ -25,4 +25,4 @@ Back up existing reports before recreating a USB; writing an image erases the se
 
 Quick Scan 1.0 was tested on a physical ThinkPad P15 Gen 2i. The 1.1 update still needs a small physical pilot across different PCs, including GPU-memory verification. Secure Boot compatibility is not verified. Hardware detection and basic SMART readings are not stress tests or a complete hardware certification; unknown data stays unknown. Windows installer testing is separate from diagnostics validation.
 
-The Mac application is **ad-hoc signed, not Apple-notarized**. Downloaded copies may require explicit approval in macOS Privacy & Security. Checksums verify integrity, not publisher identity. No Windows or other proprietary OS installer is included.
+The Mac application is **Developer ID signed and Apple-notarized**. The app and DMG carry stapled notarization tickets and pass local Gatekeeper assessment. Re-download the app if your copy predates this notarized reissue. Checksums verify download integrity; the Apple-verified signature identifies the publisher. No Windows or other proprietary OS installer is included.

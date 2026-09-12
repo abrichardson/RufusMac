@@ -11,7 +11,7 @@ Creates Windows installation USBs on macOS 26 and Apple Silicon. See Credits bel
 - **Macus-0.4.0-arm64.dmg**: the Mac application for Apple Silicon, macOS 26 or later. Open the DMG and drag Macus into Applications. A ZIP is also available.
 - **Macus-QuickScan-USB.img.zip**: separate PC boot image. Extract it and keep the `.img` and `.sha256` together, then select the image in Macus.
 
-The Mac app is ad-hoc signed, not Apple-notarized; downloaded copies may require approval in macOS Privacy & Security. SHA-256 files verify download integrity, not publisher identity.
+The published Mac app is Developer ID signed and Apple-notarized. SHA-256 files verify download integrity; macOS verifies the publisher signature and notarization ticket.
 
 ## What works in this fork
 
@@ -103,3 +103,18 @@ speeds, and each internal drive’s model, capacity, HDD/SSD type, interface and
 Unknown fields remain unknown; detection does not certify functionality.
 
 Quick Scan 1.1 adds readable capacities, friendly model names, scan timing, NVMe wear/error details, driver-reported GPU memory where available, and explicit clock warnings. See [the Quick Scan guide](docs/QUICK-SCAN.md). Back up existing reports before rewriting a USB.
+
+## Signed release builds
+
+Local builds default to ad-hoc signing. For distribution, set `MACUS_SIGN_IDENTITY`
+to your Developer ID Application identity and `MACUS_NOTARY_PROFILE` to a
+`notarytool` Keychain profile. Then run:
+
+```sh
+bash scripts/build_app.sh
+bash scripts/notarize_app.sh
+```
+
+The notarization script verifies Apple's acceptance, staples tickets to the app
+and DMG, and checks Gatekeeper. Create the release ZIP and checksum manifest only
+after stapling. Credentials and private keys must stay outside the repository.

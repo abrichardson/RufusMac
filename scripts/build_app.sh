@@ -89,7 +89,16 @@ PLIST
 
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
-echo "▶ Ad-hoc code signing…"
-codesign --force --deep --sign - "$APP" >/dev/null 2>&1 && echo "  signed (ad-hoc)" || echo "  (codesign skipped)"
+if [ -n "${MACUS_SIGN_IDENTITY:-}" ]; then
+  echo "▶ Developer ID signing…"
+  for item in "$RES_DIR/thirdparty/libwim.15.dylib" "$RES_DIR/thirdparty/wimlib-imagex"; do
+    [ ! -f "$item" ] || codesign --force --timestamp --options runtime --sign "$MACUS_SIGN_IDENTITY" "$item"
+  done
+  codesign --force --timestamp --options runtime --sign "$MACUS_SIGN_IDENTITY" "$APP"
+else
+  echo "▶ Ad-hoc code signing (local development)…"
+  codesign --force --deep --sign - "$APP"
+fi
+codesign --verify --deep --strict "$APP"
 
 echo "✅ Built $APP  (v$VERSION build $BUILD_NUM)"
