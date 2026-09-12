@@ -3,8 +3,8 @@ import MacusKit
 
 // macusctl — Macus's command-line companion (diagnostics & automation).
 //
-// Read-only / dry-run by default. It never writes to a disk; the destructive
-// engines live in the app behind an explicit confirmation + admin prompt.
+// Disk inspection is read-only; inventory-export copies a toolkit folder.
+// Destructive engines live in the app behind an explicit confirmation + admin prompt.
 // Handy for scripting, CI checks, and verifying drive detection.
 //
 // Developed by Harith Dilshan / h4rithd.com — built with the help of Claude Code.
@@ -99,6 +99,7 @@ func printHelp() {
       macusctl list                       List external/removable USB drives (read-only)
       macusctl preview <mode> [iso]       Dry-run the command pipeline (NOTHING is executed)
                                        modes: dd | windows | multiboot | reclaim
+      macusctl inventory-export <folder> Export the Linux toolkit (no formatting)
       macusctl version                    Print version
       macusctl help                       Show this help
 
@@ -111,6 +112,9 @@ let command = arguments.first ?? "help"
 
 do {
     switch command {
+    case "inventory-export":
+        guard arguments.count == 2 else { print("Usage: macusctl inventory-export <folder>"); exit(1) }
+        print(try InventoryToolkit.export(to: URL(fileURLWithPath: arguments[1])).path)
     case "list":
         try await listDrives()
     case "preview":

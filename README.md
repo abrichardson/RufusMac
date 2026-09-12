@@ -4,6 +4,15 @@ Created by SynapsEdge. A native macOS app for creating bootable USB installers.
 
 Creates Windows installation USBs on macOS 26 and Apple Silicon. See Credits below for the original project and license.
 
+## Downloads
+
+[Download Macus 0.4.0 and Quick Scan 1.1](https://github.com/abrichardson/RufusMac/releases/tag/v0.4.0).
+
+- **Macus-0.4.0-arm64.dmg**: the Mac application for Apple Silicon, macOS 26 or later. Open the DMG and drag Macus into Applications. A ZIP is also available.
+- **Macus-QuickScan-USB.img.zip**: separate PC boot image. Extract it and keep the `.img` and `.sha256` together, then select the image in Macus.
+
+The Mac app is ad-hoc signed, not Apple-notarized; downloaded copies may require approval in macOS Privacy & Security. SHA-256 files verify download integrity, not publisher identity.
+
 ## What works in this fork
 
 - Windows UEFI installers on FAT32, with either GPT or MBR partition tables.
@@ -21,6 +30,22 @@ Creates Windows installation USBs on macOS 26 and Apple Silicon. See Credits bel
 The Windows options panel can create a named local administrator, allow setup without a Microsoft account, and decline Express setup settings. These controls are off by default and independent of the hardware bypass. Local accounts start with a blank password and request a password change at the next sign-in, matching Rufus's approach. No password is collected by the Mac app. Validate this behavior in Windows Setup before deploying customized media.
 
 Windows writes display the current stage, live tool output, and elapsed time. See [the official Rufus comparison](docs/RUFUS-COMPARISON.md) for the implementation rationale, remaining features, and test limits.
+
+## Inventory & Diagnostics
+
+Diagnostics boot media is a separate download; the Mac app stays small. Extract
+the **USB image ZIP** (keeping the `.img` and `.sha256` together). In the sidebar choose **Inventory & Diagnostics**, select a regular USB of 2 GB or larger,
+choose the extracted `.img`, then click **Create Diagnostics USB**. Confirm the drive can be erased and wait
+for verification and automatic ejection.
+
+Boot an Intel/AMD PC from that USB. **Quick Scan automatically scans, saves and shuts down** with no clicks. Move it to the next PC, or reconnect the USB to your Mac and click **Import saved reports**. Choose Full Diagnostics from the boot menu for guided/manual checks. A separate 512 MiB partition keeps reports on the
+same USB. An existing Ventoy USB can also be used from the expandable option.
+Unknown data never becomes a passing result. This is not a Windows compatibility or firmware-enrollment certification.
+See [the bootable image guide](docs/DIAGNOSTICS-APPLIANCE.md) for build commands,
+storage behavior and test limits.
+
+The earlier folder-based toolkit remains available under **Advanced** for custom
+Linux sessions: `swift run macusctl inventory-export /path/to/destination`.
 
 ## Build
 
@@ -44,7 +69,7 @@ For a Windows x64 ISO, the target is an Intel/AMD PC. Creating the USB on Apple 
 
 ## Limits and validation
 
-- No physical USB write or PC boot test has been performed for this fork yet.
+- Quick Scan 1.0 was successfully tested on a physical ThinkPad P15 Gen 2i. Quick Scan 1.1 passed BIOS/UEFI virtual boot, repeated-save and save-failure checks, plus 22 Python tests. Its physical multi-model pilot and GPU-memory verification remain pending. Windows installer validation remains separate; these diagnostics results do not certify Windows Setup.
 - Tests execute the Windows pipeline using fake disk/mount commands and real temporary file copies. They cover WIM/ESD/SWM copies, GPT/MBR, missing wimlib, oversized ESD rejection, an internal disk appearing at execution time, corruption detection, and subprocess pipe draining.
 - Large ESD files and other files over FAT32's limit are rejected **before erase**. ESD conversion is not implemented.
 - Multiboot is disabled because upstream references an installer script that is not supplied. Legacy Windows BIOS boot, NTFS writing, and full formatting are not implemented.
@@ -62,3 +87,19 @@ swift run macusctl preview windows /path/to/Windows.iso
 ## Credits
 
 Original RufusMac: Harith Dilshan / h4rithd.com. wimlib: Eric Biggers and contributors, https://wimlib.net/. See `LICENSE` and the licenses bundled with wimlib.
+
+### Dedicated Diagnostics USB
+
+Select the separate `.img` in **Inventory & Diagnostics → Choose diagnostics image**,
+then click **Create Diagnostics USB** to prepare a regular
+USB of 2 GB or larger. The selected drive is erased, verified and ejected. Boot
+a PC from it; Quick Scan saves and shuts down automatically. Reconnect it to your Mac and
+click **Import saved reports**. Ventoy is optional. The dedicated layout includes
+512 MiB for reports; remaining USB capacity is unused. See
+[the diagnostics guide](docs/DIAGNOSTICS-APPLIANCE.md) for build and test details.
+
+Reports now include GPU model/driver, firmware-reported RAM type, module sizes and
+speeds, and each internal drive’s model, capacity, HDD/SSD type, interface and health.
+Unknown fields remain unknown; detection does not certify functionality.
+
+Quick Scan 1.1 adds readable capacities, friendly model names, scan timing, NVMe wear/error details, driver-reported GPU memory where available, and explicit clock warnings. See [the Quick Scan guide](docs/QUICK-SCAN.md). Back up existing reports before rewriting a USB.

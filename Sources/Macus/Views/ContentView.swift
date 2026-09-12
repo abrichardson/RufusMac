@@ -23,12 +23,17 @@ extension BurnMode {
 struct ContentView: View {
     @State private var model = AppModel()
     @State private var showCredits = false
+    @State private var showInventory = false
+    @State private var inventoryBusy = false
 
     var body: some View {
         ZStack {
             HStack(spacing: 0) {
-                sidebar
+                sidebar.disabled(inventoryBusy)
                 VStack(spacing: 0) {
+                    if showInventory {
+                        InventoryView(isBusy: $inventoryBusy)
+                    } else {
                     header
                     ScrollView {
                         VStack(spacing: 18) {
@@ -39,6 +44,7 @@ struct ContentView: View {
                         .padding(28)
                     }
                     actionBar
+                    }
                 }
                 .background(Color(nsColor: .windowBackgroundColor))
             }
@@ -73,16 +79,24 @@ struct ContentView: View {
                 Text("WORKSPACE").font(.system(size: 10, weight: .semibold)).tracking(1.5)
                     .foregroundStyle(.white.opacity(0.4)).padding(.bottom, 8)
                 ForEach([BurnMode.single, .dd, .reclaim]) { mode in
-                    Button { model.mode = mode } label: {
+                    Button { model.mode = mode; showInventory = false } label: {
                         Label(mode.navigationTitle, systemImage: mode.systemImage)
                             .font(.system(size: 12, weight: .medium))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 12).padding(.vertical, 12)
-                            .background(model.mode == mode ? .white.opacity(0.12) : .clear, in: .rect(cornerRadius: 9))
-                            .foregroundStyle(model.mode == mode ? .white : .white.opacity(0.58))
+                            .background(!showInventory && model.mode == mode ? .white.opacity(0.12) : .clear, in: .rect(cornerRadius: 9))
+                            .foregroundStyle(!showInventory && model.mode == mode ? .white : .white.opacity(0.58))
                     }.buttonStyle(.plain)
                 }
             }
+            Button { showInventory = true } label: {
+                Label("Inventory & Diagnostics", systemImage: "stethoscope")
+                    .font(.system(size: 12, weight: .medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(showInventory ? .white.opacity(0.12) : .clear, in: .rect(cornerRadius: 9))
+                    .foregroundStyle(showInventory ? .white : .white.opacity(0.58))
+            }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .leading, spacing: 10) {
                 Label("Built for macOS", systemImage: "desktopcomputer")

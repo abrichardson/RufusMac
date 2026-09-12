@@ -20,11 +20,15 @@ let package = Package(
         .macOS("26.0") // Liquid Glass requires the macOS 26 SDK
     ],
     targets: [
+        .target(name: "MacusDiskAccess", path: "Sources/MacusDiskAccess", publicHeadersPath: "include"),
         .target(
             name: "MacusKit",
+            dependencies: ["MacusDiskAccess"],
             path: "Sources/MacusKit",
             resources: [
-                .process("Resources")
+                .process("Resources/distros.json"),
+                .process("Resources/windows-write.sh"),
+                .copy("Resources/InventoryToolkit")
             ],
             swiftSettings: commonSwiftSettings
         ),

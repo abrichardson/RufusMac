@@ -7,6 +7,40 @@ on:
   workflow_dispatch:
 
 jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build offline diagnostics image
+        run: bash scripts/build_diagnostics_iso.sh
+      - name: Build dedicated diagnostics USB image
+        run: |
+          docker build -f diagnostics/Test.Dockerfile -t macus-diagnostics-test:bookworm diagnostics
+          docker run --rm -v "$PWD:/src:ro" -v "$PWD/dist/diagnostics:/out" macus-diagnostics-test:bookworm bash /src/scripts/diagnostics/make-usb-image.sh
+      - name: Test live boot and USB report persistence
+        run: bash scripts/test_diagnostics_iso.sh
+      - name: Package separate diagnostics downloads
+        run: bash scripts/package_diagnostics.sh
+      - name: Build and test separate Quick Scan image
+        run: |
+          mkdir -p dist/quickscan
+          docker run --rm -v "$PWD:/src:ro" -v "$PWD/dist/diagnostics:/base:ro" -v "$PWD/dist/quickscan:/out" macus-diagnostics-test:bookworm bash -c 'bash /src/scripts/diagnostics/build-quickscan.sh && bash /src/scripts/diagnostics/test-quickscan.sh'
+          cp docs/QUICK-SCAN.md dist/quickscan/README.md
+          cd dist/quickscan
+          zip -q Macus-QuickScan-USB.img.zip Macus-QuickScan-USB.img Macus-QuickScan-USB.img.sha256 README.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quickscan-image
+          path: dist/quickscan/*.zip
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-image
+          path: |
+            dist/diagnostics/*.zip
+            dist/diagnostics/packages.txt
+          compression-level: 0
+
   build:
     # Liquid Glass needs the macOS 26 SDK (Xcode 26). Use a macOS 26 runner
     # image when available; otherwise pin the appropriate runner/Xcode.
@@ -22,6 +56,9 @@ jobs:
 
       - name: Test
         run: swift test
+
+      - name: Test inventory toolkit
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s Tests/InventoryToolkitTests -v
 
       - name: Bundle Windows writer dependency
         run: |

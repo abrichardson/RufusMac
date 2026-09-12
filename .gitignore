@@ -18,3 +18,7 @@ vendor/
 # Editor
 .vscode/
 .idea/
+
+# Python generated caches
+__pycache__/
+*.py[cod]
